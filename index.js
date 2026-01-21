@@ -12,15 +12,23 @@ dotenv.config();
 const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://ems-front-end-dusky.vercel.app"
+  "https://ems-front-end-git-main-raju-das-projects.vercel.app",
 ];
+
 app.use(
   cors({
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   }),
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -56,10 +64,9 @@ app.get("/verify", authenticate, (req, res) => {
   return res.status(200).json({
     status: true,
     role: req.user.role,
-    id: req.user.id
+    id: req.user.id,
   });
 });
-
 
 //MongoDb Connection
 // mongoose
@@ -71,4 +78,4 @@ app.get("/verify", authenticate, (req, res) => {
 //   console.log("Server is run successfully.");
 // });
 
-export default app
+export default app;
