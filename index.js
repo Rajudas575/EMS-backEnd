@@ -60,13 +60,13 @@ app.use("/auth", authRoute);
 app.use("/auth", adminRouter);
 app.use("/employee", empRouter);
 
-app.get("/verify", authenticate, (req, res) => {
-  return res.status(200).json({
-    status: true,
-    role: req.user.role,
-    id: req.user.id,
-  });
-});
+// app.get("/verify", authenticate, (req, res) => {
+//   return res.status(200).json({
+//     status: true,
+//     role: req.user.role,
+//     id: req.user.id,
+//   });
+// });
 
 //MongoDb Connection
 // mongoose
