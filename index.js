@@ -39,7 +39,7 @@ async function connectToMongoDB() {
   if (cachedConnection) return cachedConnection;
 
   cachedConnection = await mongoose.connect(process.env.MONGODB_URL, {
-    dbName: "readyforread_db",
+    dbName: "employee_ms",
   });
 
   console.log("MongoDB connected");
