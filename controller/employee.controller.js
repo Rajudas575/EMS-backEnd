@@ -5,7 +5,6 @@ import cloudinary from "../config/cloudinary.js";
 
 //-----Employee Login-------//
 export const empLogin = async (req, res) => {
-  
   const { email, password } = req.body;
   const user = await User.findOne({ email });
 
@@ -24,7 +23,12 @@ export const empLogin = async (req, res) => {
     process.env.JWT_SECRET,
     { expiresIn: "1d" },
   );
-  res.cookie("token", token, { httpOnly: true });
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  });
   return res.json({
     loginStatus: true,
     message: "User Loggedin Successfully",
@@ -34,7 +38,6 @@ export const empLogin = async (req, res) => {
 
 //----Get Details of Employee----//
 export const getDetails = async (req, res) => {
-  
   try {
     const empId = req.params.id;
     const empData = await User.findById(empId);
@@ -54,19 +57,19 @@ export const getDetails = async (req, res) => {
   }
 };
 
-export const updateDetails = async(req,res)=>{
+export const updateDetails = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, address } = req.body;
 
-    let imageUrl; 
+    let imageUrl;
 
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
         `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
         {
           folder: "employee-ms-images",
-        }
+        },
       );
       imageUrl = uploadResult.secure_url;
     }
@@ -81,11 +84,10 @@ export const updateDetails = async(req,res)=>{
       updateData.image = imageUrl; // only update if exists
     }
 
-    const empUpdate = await User.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select("-password");
+    const empUpdate = await User.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
 
     if (!empUpdate) {
       return res.status(404).json({
@@ -105,7 +107,7 @@ export const updateDetails = async(req,res)=>{
       error: error.message,
     });
   }
-}
+};
 //---Log Out---//
 export const Logout = (req, res) => {
   res.clearCookie("token");

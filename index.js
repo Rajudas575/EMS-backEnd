@@ -10,9 +10,13 @@ import adminRouter from "./routes/admin.route.js";
 
 dotenv.config();
 const app = express();
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://ems-front-end-dusky.vercel.app"
+];
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   }),
