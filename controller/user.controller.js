@@ -353,7 +353,6 @@ export const adminEdit = async (req, res) => {
 export const Login = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  console.log(user);
   // Check email
   if (!user) {
     return res.json({ loginStatus: false, Error: "Invalid email or password" });
@@ -367,13 +366,13 @@ export const Login = async (req, res) => {
   const token = jwt.sign(
     { role: "admin", email: user.email, id: user._id },
     process.env.JWT_SECRET,
-    { expiresIn: "15m" },
+    { expiresIn: "1d" },
   );
   res.cookie("token", token, {
     httpOnly: true,
     secure: true,
     sameSite: "none",
-    maxAge: 15 * 60 * 1000, // 1 day
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
   });
   return res.json({ loginStatus: true });
 };
