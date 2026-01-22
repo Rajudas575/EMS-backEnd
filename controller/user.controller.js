@@ -67,7 +67,7 @@ export const addEmployee = async (req, res) => {
 //---GET Employees---//
 export const getEmployees = async (req, res) => {
   try {
-    const getEmps = await User.find()
+    const getEmps = await User.find({ role: "user" })
       .populate("category_id", "category")
       .select("-password");
     if (getEmps) {
