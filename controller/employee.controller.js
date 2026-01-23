@@ -6,7 +6,6 @@ import Attendance from "../models/attendance.model.js";
 
 //-----Employee Login-------//
 export const empLogin = async (req, res) => {
-
   const { email, password } = req.body;
   const user = await User.findOne({ email, role: "user" });
 
@@ -25,7 +24,11 @@ export const empLogin = async (req, res) => {
     process.env.JWT_SECRET,
     { expiresIn: "1d" },
   );
-  res.cookie("token", token, { httpOnly: true });
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
   return res.json({
     loginStatus: true,
     message: "User Loggedin Successfully",
