@@ -10,11 +10,18 @@ import {
   employeeCount,
   getByIdEmployee,
   getEmployees,
+  setSalaryStructure,
   totalSalary,
 } from "../controller/user.controller.js";
 import upload from "../config/multer.js";
 import { addCategory, getCategory } from "../controller/category.controller.js";
 import { authenticate } from "../middileware/authenticate.js";
+import {
+  approveLeave,
+  getPendingLeaves,
+  rejectLeave,
+} from "../controller/leave.controller.js";
+import { generatePayroll } from "../controller/payroll.controller.js";
 
 const adminRouter = express.Router();
 adminRouter.use(authenticate);
@@ -39,6 +46,7 @@ adminRouter.post(
   addEmployee,
 );
 
+adminRouter.put("/set-salary/:userId", setSalaryStructure);
 adminRouter.post("/add_category", addCategory);
 adminRouter.get("/category", getCategory);
 
@@ -51,5 +59,11 @@ adminRouter.get("/employee_count", employeeCount);
 adminRouter.get("/totalSalary", totalSalary);
 adminRouter.get("/admin_detail", adminDetails);
 adminRouter.put("/edit_admin/:id", upload.single("image"), adminEdit);
+adminRouter.get("/leave/:id/approve", approveLeave);
+adminRouter.get("/leave/:id/reject", rejectLeave);
+adminRouter.post("/payroll/generate", generatePayroll);
+adminRouter.get("/leave/pending", getPendingLeaves);
+adminRouter.put("/leave/approve/:leaveId", approveLeave);
+adminRouter.put("/admin/reject/:leaveId", rejectLeave);
 
 export default adminRouter;

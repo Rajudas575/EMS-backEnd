@@ -6,9 +6,10 @@ import { get } from "mongoose";
 import { json } from "express";
 
 export const addEmployee = async (req, res) => {
+  console.log(req.body);
   try {
-    const { name, email, password, salary, address, category_id } = req.body;
-
+    const { name, email, password, address, category_id } = req.body;
+    // Required validation
     if (!name || !email || !password || !category_id) {
       return res.status(400).json({
         status: false,
@@ -16,36 +17,45 @@ export const addEmployee = async (req, res) => {
       });
     }
 
-    const checkUser = await User.findOne({ email });
-    if (checkUser) {
+    // Email uniqueness
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({
         status: false,
-        message: "User is already registered!",
+        message: "User already exists",
       });
     }
 
-    const hashPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Upload image if exists
     let imageUrl = null;
-
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(
         `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
-        {
-          folder: "employee-ms-images",
-        },
+        { folder: "employee-ms-images" },
       );
       imageUrl = uploadResult.secure_url;
     }
 
+    let salaryStructure = undefined;
+
+    salaryStructure = {
+      basic: 0,
+      hra: 0,
+      allowance: 0,
+    };
+
+    // Create user
     const user = new User({
       name,
       email,
-      password: hashPassword,
-      salary,
+      password: hashedPassword,
       address,
       category_id,
       image: imageUrl,
+      salaryStructure,
     });
 
     await user.save();
@@ -64,27 +74,97 @@ export const addEmployee = async (req, res) => {
   }
 };
 
-//---GET Employees---//
-export const getEmployees = async (req, res) => {
+//---set salary---//
+export const setSalaryStructure = async (req, res) => {
   try {
-    const getEmps = await User.find({ role: "user" })
-      .populate("category_id", "category")
-      .select("-password");
-    if (getEmps) {
-      return res.status(200).json({
-        status: true,
-        result: getEmps,
-      });
-    } else {
-      return res.json.ststus(400).json({
+    const { userId } = req.params;
+    const { basic, hra, allowance } = req.body;
+
+    if (!basic || isNaN(basic)) {
+      return res.status(400).json({
         status: false,
-        error: "There is no users",
+        message: "Basic salary is required",
       });
     }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        salaryStructure: {
+          basic: Number(basic),
+          hra: Number(hra || 0),
+          allowance: Number(allowance || 0),
+        },
+      },
+      { new: true },
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        status: false,
+        message: "Employee not found",
+      });
+    }
+
+    return res.json({
+      status: true,
+      message: "Salary structure updated successfully",
+      salaryStructure: user.salaryStructure,
+    });
   } catch (error) {
-    res.status(500).json({
+    console.error("SET SALARY ERROR:", error);
+    return res.status(500).json({
       status: false,
-      error: error,
+      message: error.message,
+    });
+  }
+};
+
+//---GET Employees---//
+// export const getEmployees = async (req, res) => {
+//   try {
+//     const getEmps = await User.find()
+//       .populate("category_id", "category")
+//       .select("-password");
+//     if (getEmps) {
+//       return res.status(200).json({
+//         status: true,
+//         result: getEmps,
+//       });
+//     } else {
+//       return res.json.ststus(400).json({
+//         status: false,
+//         error: "There is no users",
+//       });
+//     }
+//   } catch (error) {
+//     res.status(500).json({
+//       status: false,
+//       error: error,
+//     });
+//   }
+// };
+
+export const getEmployees = async (req, res) => {
+  try {
+    const employees = await User.find()
+      .populate("category_id", "category")
+      .select("-password");
+
+    const result = employees.map((emp) => ({
+      ...emp.toObject(),
+      hasSalary: !!emp.salaryStructure?.basic,
+    }));
+
+    return res.status(200).json({
+      status: true,
+      result,
+    });
+  } catch (error) {
+    console.error("GET EMPLOYEES ERROR:", error);
+    return res.status(500).json({
+      status: false,
+      error: error.message,
     });
   }
 };
@@ -258,9 +338,28 @@ export const totalSalary = async (req, res) => {
   try {
     const result = await User.aggregate([
       {
+        // only users who have salaryStructure
+        $match: {
+          "salaryStructure.basic": { $exists: true, $gt: 0 },
+        },
+      },
+      {
+        // calculate per-user gross salary
+        $project: {
+          grossSalary: {
+            $add: [
+              "$salaryStructure.basic",
+              { $ifNull: ["$salaryStructure.hra", 0] },
+              { $ifNull: ["$salaryStructure.allowance", 0] },
+            ],
+          },
+        },
+      },
+      {
+        // sum all users
         $group: {
           _id: null,
-          totalSalary: { $sum: "$salary" },
+          totalSalary: { $sum: "$grossSalary" },
         },
       },
     ]);
@@ -272,12 +371,14 @@ export const totalSalary = async (req, res) => {
       result: totalSalary,
     });
   } catch (error) {
+    console.error("TOTAL SALARY ERROR:", error);
     return res.status(500).json({
       status: false,
       error: error.message,
     });
   }
 };
+
 
 export const adminDetails = async (req, res) => {
   try {
@@ -353,6 +454,7 @@ export const adminEdit = async (req, res) => {
 export const Login = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
+
   // Check email
   if (!user) {
     return res.json({ loginStatus: false, Error: "Invalid email or password" });
@@ -370,8 +472,8 @@ export const Login = async (req, res) => {
   );
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: false,
+    sameSite: "lax",
     maxAge: 24 * 60 * 60 * 1000, // 1 day
   });
   return res.json({ loginStatus: true });
