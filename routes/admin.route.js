@@ -18,6 +18,7 @@ import { addCategory, getCategory } from "../controller/category.controller.js";
 import { authenticate } from "../middileware/authenticate.js";
 import {
   approveLeave,
+  assignLeaveBalance,
   getPendingLeaves,
   rejectLeave,
 } from "../controller/leave.controller.js";
@@ -65,5 +66,7 @@ adminRouter.post("/payroll/generate", generatePayroll);
 adminRouter.get("/leave/pending", getPendingLeaves);
 adminRouter.put("/leave/approve/:leaveId", approveLeave);
 adminRouter.put("/admin/reject/:leaveId", rejectLeave);
+adminRouter.put("/admin/reject/:leaveId", rejectLeave);
+adminRouter.post("/leave/assign", assignLeaveBalance);
 
 export default adminRouter;

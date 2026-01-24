@@ -14,6 +14,7 @@ import {
   viewPaySlip,
 } from "../controller/payroll.controller.js";
 import { applyLeave, viewLeave } from "../controller/applyLeave.controller.js";
+import { getLeaveBalance } from "../controller/leave.controller.js";
 
 const empRouter = express.Router();
 empRouter.use(authenticate);
@@ -27,5 +28,6 @@ empRouter.post("/payroll/generate", generatePayroll);
 empRouter.get("/payroll/:userId/:month/:year", viewPaySlip);
 empRouter.post("/apply-leave", applyLeave);
 empRouter.get("/leaves/:userId", viewLeave);
+empRouter.get("/leave/balance/:userId/:year", getLeaveBalance);
 
 export default empRouter;
