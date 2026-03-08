@@ -379,7 +379,6 @@ export const totalSalary = async (req, res) => {
   }
 };
 
-
 export const adminDetails = async (req, res) => {
   try {
     const admin = await User.findOne({ role: "admin" }).select("-password");
@@ -472,8 +471,8 @@ export const Login = async (req, res) => {
   );
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
     maxAge: 24 * 60 * 60 * 1000, // 1 day
   });
   return res.json({ loginStatus: true });
