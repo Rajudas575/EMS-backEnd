@@ -154,7 +154,7 @@ export const getLeaveBalance = async (req, res) => {
 };
 
 export const assignLeaveBalance = async (req, res) => {
-  console.log(req.body);
+ 
   try {
     const { userId, year, PL, SL } = req.body;
 

@@ -22,7 +22,11 @@ import {
   getPendingLeaves,
   rejectLeave,
 } from "../controller/leave.controller.js";
-import { generatePayroll } from "../controller/payroll.controller.js";
+import { generatePayroll, getPayrollList, lockPayroll } from "../controller/payroll.controller.js";
+import {
+  getCompanyCalendar,
+  setCompanyCalendar,
+} from "../controller/calendar.controller.js";
 
 const adminRouter = express.Router();
 adminRouter.use(authenticate);
@@ -60,9 +64,16 @@ adminRouter.get("/employee_count", employeeCount);
 adminRouter.get("/totalSalary", totalSalary);
 adminRouter.get("/admin_detail", adminDetails);
 adminRouter.put("/edit_admin/:id", upload.single("image"), adminEdit);
+
+adminRouter.post("/admin/calendar", setCompanyCalendar);
+adminRouter.get("/admin/calendar/:year", getCompanyCalendar);
+
+
 adminRouter.get("/leave/:id/approve", approveLeave);
 adminRouter.get("/leave/:id/reject", rejectLeave);
 adminRouter.post("/payroll/generate", generatePayroll);
+adminRouter.post("/payroll", getPayrollList);
+adminRouter.patch("/payroll/lock/:id", lockPayroll);
 adminRouter.get("/leave/pending", getPendingLeaves);
 adminRouter.put("/leave/approve/:leaveId", approveLeave);
 adminRouter.put("/admin/reject/:leaveId", rejectLeave);

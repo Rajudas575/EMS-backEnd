@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/users.model.js";
 import cloudinary from "../config/cloudinary.js";
 import Attendance from "../models/attendance.model.js";
+import CompanyCalendar from "../models/companyHoliday.model.js";
 
 //-----Employee Login-------//
 export const empLogin = async (req, res) => {
@@ -24,11 +25,7 @@ export const empLogin = async (req, res) => {
     process.env.JWT_SECRET,
     { expiresIn: "1d" },
   );
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-  });
+  res.cookie("token", token, { httpOnly: true });
   return res.json({
     loginStatus: true,
     message: "User Loggedin Successfully",
@@ -116,17 +113,20 @@ export const updateDetails = async (req, res) => {
 export const checkIn = async (req, res) => {
   try {
     const { userId } = req.params;
-    const today = new Date().toISOString().split("T")[0]; // 'YYYY-MM-DD'
 
-    // Check if already checked in
+    const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+    const [year, month] = today.split("-").map(Number);
+
     let attendance = await Attendance.findOne({ userId, date: today });
-    if (attendance)
+    if (attendance) {
       return res.status(400).json({ message: "Already checked in" });
+    }
 
-    // Create attendance record
     attendance = new Attendance({
       userId,
       date: today,
+      month,
+      year,
       checkIn: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -135,8 +135,13 @@ export const checkIn = async (req, res) => {
     });
 
     await attendance.save();
-    res.status(200).json({ message: "Check-in successful", attendance });
+
+    res.status(200).json({
+      message: "Check-in successful",
+      attendance,
+    });
   } catch (error) {
+    console.error("CHECK-IN ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -145,29 +150,41 @@ export const checkIn = async (req, res) => {
 export const checkOut = async (req, res) => {
   try {
     const { userId } = req.params;
-    const today = new Date().toISOString().split("T")[0];
 
-    let attendance = await Attendance.findOne({ userId, date: today });
-    if (!attendance)
+    const today = new Date().toLocaleDateString("en-CA");
+
+    const attendance = await Attendance.findOne({ userId, date: today });
+    if (!attendance) {
       return res.status(400).json({ message: "No check-in found" });
-    if (attendance.checkOut)
-      return res.status(400).json({ message: "Already checked out" });
+    }
 
-    // Update checkOut time
-    attendance.checkOut = new Date().toLocaleTimeString([], {
+    if (attendance.checkOut) {
+      return res.status(400).json({ message: "Already checked out" });
+    }
+
+    const outTime = new Date();
+
+    attendance.checkOut = outTime.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
 
-    // Optional: update status for half-day if worked less than 4 hours
     const [inHour, inMinute] = attendance.checkIn.split(":").map(Number);
-    const [outHour, outMinute] = attendance.checkOut.split(":").map(Number);
-    const hoursWorked = outHour + outMinute / 60 - (inHour + inMinute / 60);
-    if (hoursWorked < 4) attendance.status = "Half-day";
+    const hoursWorked =
+      outTime.getHours() + outTime.getMinutes() / 60 - (inHour + inMinute / 60);
+
+    if (hoursWorked < 4) {
+      attendance.status = "Half-day";
+    }
 
     await attendance.save();
-    res.status(200).json({ message: "Check-out successful", attendance });
+
+    res.status(200).json({
+      message: "Check-out successful",
+      attendance,
+    });
   } catch (error) {
+    console.error("CHECK-OUT ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -176,10 +193,10 @@ export const checkOut = async (req, res) => {
 export const getTodayAttendance = async (req, res) => {
   try {
     const { userId } = req.params;
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString("en-CA");
 
     const attendance = await Attendance.findOne({ userId, date: today });
-    res.status(200).json(attendance); // can be null
+    res.status(200).json(attendance);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

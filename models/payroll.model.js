@@ -8,25 +8,48 @@ const payrollSchema = new mongoose.Schema(
       required: true,
     },
 
-    month: { type: Number, required: true }, // 1–12
-    year: { type: Number, required: true },
+    month: Number,
+    year: Number,
 
-    basicSalary: { type: Number, required: true },
-    hra: { type: Number, default: 0 },
-    allowance: { type: Number, default: 0 },
-
-    deductions: { type: Number, default: 0 }, // PF, tax, etc.
-
+    totalDays: Number,
+    holidays: Number,
+    weeklyOff: Number,
     workingDays: Number,
+
     presentDays: Number,
     halfDays: Number,
-    absentDays: Number,
+    paidLeaves: Number,
+    lopLeaves: Number,
+
+    payableDays: Number,
+    lopDays: Number,
+
+    basicSalary: Number,
+    hra: Number,
+    allowance: Number,
+    grossSalary: Number,
+
+    perDaySalary: Number,
+    lopDeduction: Number,
+
+    professionalTax: {
+      type: Number,
+      default: 0,
+    },
 
     netSalary: Number,
-    generatedAt: { type: Date, default: Date.now },
+
+    leaveBreakup: {
+      CL: { type: Number, default: 0 },
+      SL: { type: Number, default: 0 },
+      LOP: { type: Number, default: 0 },
+    },
+
+    isLocked: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
 
-const Payroll = mongoose.model("Payroll", payrollSchema);
-export default Payroll;
+payrollSchema.index({ userId: 1, month: 1, year: 1 }, { unique: true });
+
+export default mongoose.model("Payroll", payrollSchema);

@@ -15,6 +15,7 @@ import {
 } from "../controller/payroll.controller.js";
 import { applyLeave, viewLeave } from "../controller/applyLeave.controller.js";
 import { getLeaveBalance } from "../controller/leave.controller.js";
+import { downloadPayslip } from "../controller/payslip.controller.js";
 
 const empRouter = express.Router();
 empRouter.use(authenticate);
@@ -22,10 +23,11 @@ empRouter.get("/detail/:id", getDetails);
 empRouter.put("/update_emp_profile/:id", upload.single("image"), updateDetails);
 empRouter.post("/checkin/:userId", checkIn);
 empRouter.post("/checkout/:userId", checkOut);
-empRouter.get("/getAtendanc/:userId", getTodayAttendance);
+empRouter.get("/getAtendance/:userId", getTodayAttendance);
 empRouter.get("/attendanceSummary/:userId", getMonthlyAttendanceSummary);
 empRouter.post("/payroll/generate", generatePayroll);
 empRouter.get("/payroll/:userId/:month/:year", viewPaySlip);
+empRouter.get("/payslip/:month/:year/download", downloadPayslip);
 empRouter.post("/apply-leave", applyLeave);
 empRouter.get("/leaves/:userId", viewLeave);
 empRouter.get("/leave/balance/:userId/:year", getLeaveBalance);
