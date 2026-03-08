@@ -18,7 +18,7 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: ["http://localhost:5173", /vercel\.app$/],
     credentials: true,
   }),
 );
